@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 import cv2
 import random
+from .utils import normalize
 
 
 class DataGenerator:
@@ -68,7 +69,7 @@ class DataGenerator:
                 image = cv2.imread(file)
                 image = cv2.resize(image, self.image_size)
                 image = image[:,:,[2, 1 ,0]] # BGR -> RGB
-                image = self._normalize(image)
+                image = normalize(image)
                 yield image
         return generator
     
@@ -87,20 +88,12 @@ class DataGenerator:
                 style_image = style_image[:, :, [2, 1 ,0]] # BGR -> RGB
                 smooth_image = smooth_image[:, :, [2, 1, 0]]
                 
-                style_image = self._normalize(style_image)
-                smooth_image = self._normalize(smooth_image)
-                gray_image = self._normalize(gray_image)
+                style_image = normalize(style_image)
+                smooth_image = normalize(smooth_image)
+                gray_image = normalize(gray_image)
                 
                 yield style_image, smooth_image, gray_image
         return generator
-    
-    def _normalize(self, x):
-        '''
-        Normalize inputs based on Tensorflow VGG19 model
-        '''
-        x = x / 127.5
-        x = x - 1.0
-        return x
     
     def __iter__(self):
         for samples in self.dataset:

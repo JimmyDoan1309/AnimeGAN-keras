@@ -27,6 +27,11 @@ def plot_image(image, gray=False, figsize=(7,7)):
         plt.imshow(image)
     plt.axis('off')
     
+def normalize(image):
+    image = image / 127.5
+    image = image - 1.0
+    return image
+
 def denormalize(image, as_float=True):
     image = ((image+1)*127.5)/255.0
     image = np.clip(image, 0, 1)

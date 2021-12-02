@@ -1,5 +1,8 @@
 __pycache__
+dataset
 datasets
 .ipynb_checkpoints
 model
 saved_model
+test_images
+images

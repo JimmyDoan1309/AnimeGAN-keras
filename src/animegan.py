@@ -1,8 +1,11 @@
 import tensorflow as tf
 import os
 import json
+import cv2
 from .nets import Generator, Discriminator
 from .losses import *
+from .utils import denormalize
+
 
 VGG_OUT = 10
 
@@ -21,9 +24,31 @@ class AnimeGAN:
         self.gen_optimizer = tf.optimizers.Adam(self.params.gen_lr, beta_1=0.5)
         self.dis_optimizer = tf.optimizers.Adam(self.params.dis_lr, beta_1=0.5)
         
-    def train(self, dataset, total_epochs=100, init_epochs=10, save_freq=1, save_path='./model', save_discriminator=True):
+    def train(self, 
+              dataset, 
+              total_epochs=100, 
+              init_epochs=10, 
+              save_freq=1, 
+              save_path='./model', 
+              save_discriminator=True, 
+              test_image=None, 
+              test_generated_save_path=None):
+        
+        if test_image:
+            assert test_generate_save_path is not None, 'Must provide test_generated_save_path'
+            os.makedirs(test_generate_save_path, exist_ok=True)
+            
+            if len(test_image.shape) == 3:
+                test_image = tf.expand_dims(test_image, axis=0)
+        
         self._init_train(dataset, init_epochs, save_freq, save_path)
-        self._train(dataset, total_epochs - init_epochs, save_freq, save_path, save_discriminator)
+        self._train(dataset, 
+                    total_epochs - init_epochs, 
+                    save_freq, 
+                    save_path, 
+                    save_discriminator, 
+                    test_image, 
+                    test_generate_save_path)
         
     
     def _init_train(self, dataset, epochs, save_freq, save_path):
@@ -39,7 +64,7 @@ class AnimeGAN:
             if e % saved_freq == 0 or e == epochs:
                 self.save_models(save_path, False, verbose=0)
     
-    def _train(self, dataset, epochs, save_freq, save_path, save_discriminator):
+    def _train(self, dataset, epochs, save_freq, save_path, save_discriminator, test_image, test_generate_save_path):
         print('Adverserial Training')
         for e in range(1, epochs+1):
             print('Epoch', e)
@@ -51,6 +76,9 @@ class AnimeGAN:
             # saved model
             if e % saved_freq == 0 or e == epochs:
                 self.save_models(save_path, save_discriminator, verbose=0)
+            
+            if test_image:
+                self._test_generator(test_image, f'image_e_{e:04d}.jpeg', test_generate_save_path)
                 
     def _init_train_step(self, content):
         with tf.GradientTape() as tape:
@@ -100,6 +128,12 @@ class AnimeGAN:
         self.dis_optimizer.apply_gradients(zip(dis_grads, self.dis.trainable_weights))
             
         return gen_loss.numpy(), dis_loss.numpy()
+    
+    def _test_generator(self, image, file_name, save_path):
+        generate = self.gen(image)
+        generate = denormalize(generate[0].numpy(), as_float=False)
+        cv2.imwrite(os.path.join(save_path, file_name), generate)
+        
     
     def save(self, save_path, save_discriminator, verbose=1):
         os.makedirs(save_path, exist_ok=True)
