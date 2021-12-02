@@ -1,0 +1,6 @@
+tensorflow~=2.6
+tensorflow_addons~=0.15
+opencv-python~=4.5
+fire~=0.4
+Pillow~=8.3
+tqdm~=4.60
