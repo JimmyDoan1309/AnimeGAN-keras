@@ -56,7 +56,7 @@ class AnimeGAN:
         return loss.numpy()
     
     def _train_step(self, content, style, smooth, gray):
-        with tf.GradientTape() as tape:
+        with tf.GradientTape(persistent=True) as tape:
             generate = self.gen(content)
             generate_logit = self.dis(generate)
             style_logit = self.dis(style)
@@ -87,6 +87,8 @@ class AnimeGAN:
             
         gen_grads = tape.gradient(gen_loss, self.gen.trainable_weights)
         dis_grads = tape.gradient(dis_loss, self.dis.trainable_weights)
+        
+        del tape
         
         self.gen_optimizer.apply_gradients(zip(gen_grads, self.gen.trainable_weights))
         self.dis_optimizer.apply_gradients(zip(dis_grads, self.dis.trainable_weights))
