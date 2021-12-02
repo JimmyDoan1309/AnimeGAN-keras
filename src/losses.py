@@ -27,7 +27,7 @@ def gradient_penalty(style, fake, discriminator, gan_type='lsgan', gp_lambda=10.
     if gan_type == 'wgan-lp':
         gp = gp_lambda * tf.reduce_mean(tf.square(tf.maximum(0.0, grad_norm - 1.)))
 
-    elif gan_type in ['wgan-gp', 'dragan']:
+    elif gan_type == 'wgan-gp' or gan_type == 'dragan':
         gp = gp_lambda * tf.reduce_mean(tf.square(grad_norm - 1.))
         
     return gp
@@ -75,11 +75,11 @@ def total_variance_loss(inputs):
     size_dw = tf.size(dw, out_type=tf.float32)
     return tf.nn.l2_loss(dh) / size_dh + tf.nn.l2_loss(dw) / size_dw
 
-def discriminator_loss(style, smooth, gray, fake, gan_type='lsgan', **kwargs):
-    style_w = kwargs.get('style_w', 1.7)
-    fake_w = kwargs.get('fake_w', 1.7)
-    gray_w = kwargs.get('gray_w', 1.7)
-    smooth_w = kwargs.get('smooth_w', 1.0)
+def discriminator_loss(style, smooth, gray, fake, dis_loss_weight, gan_type='lsgan'):
+    style_w = dis_loss_weight.get('style_w', 1.7)
+    fake_w = dis_loss_weight.get('fake_w', 1.7)
+    gray_w = dis_loss_weight.get('gray_w', 1.7)
+    smooth_w = dis_loss_weight.get('smooth_w', 1.0)
     
     style_loss = 0
     gray_loss = 0
@@ -99,10 +99,10 @@ def discriminator_loss(style, smooth, gray, fake, gan_type='lsgan', **kwargs):
         smooth_loss = tf.reduce_mean(tf.square(smooth))
 
     if gan_type == 'gan' or gan_type == 'dragan' :
-        style_loss = tf.reduce_mean(tf.losses.binary_crossentropy(tf.ones_like(style), style))
-        gray_loss = tf.reduce_mean(tf.losses.binary_crossentropy(tf.zeros_like(gray), gray))
-        fake_loss = tf.reduce_mean(tf.losses.binary_crossentropy(tf.zeros_like(fake), fake))
-        smooth_loss = tf.reduce_mean(tf.losses.binary_crossentropy(tf.zeros_like(smooth), smooth))
+        style_loss = tf.reduce_mean(tf.losses.binary_crossentropy(tf.ones_like(style), style, from_logits=True))
+        gray_loss = tf.reduce_mean(tf.losses.binary_crossentropy(tf.zeros_like(gray), gray, from_logits=True))
+        fake_loss = tf.reduce_mean(tf.losses.binary_crossentropy(tf.zeros_like(fake), fake, from_logits=True))
+        smooth_loss = tf.reduce_mean(tf.losses.binary_crossentropy(tf.zeros_like(smooth), smooth, from_logits=True))
 
     if gan_type == 'hinge':
         style_loss = tf.reduce_mean(tf.nn.relu(1.0 - style))
@@ -114,5 +114,22 @@ def discriminator_loss(style, smooth, gray, fake, gan_type='lsgan', **kwargs):
             fake_w * fake_loss + \
             gray_w * gray_loss  + \
             smooth_w * smooth_loss
+
+    return loss
+
+def generator_loss(fake, gan_type='lsgan'):
+    loss = 0
+
+    if gan_type == 'wgan-gp' or gan_type == 'wgan-lp':
+        loss = -tf.reduce_mean(fake)
+
+    if gan_type == 'lsgan' :
+        loss = tf.reduce_mean(tf.square(fake - 1.0))
+
+    if gan_type == 'gan' or gan_type == 'dragan':
+        loss = tf.reduce_mean(tf.losses.binary_crossentropy(tf.ones_like(fake), fake, from_logits=True))
+
+    if gan_type == 'hinge':
+        loss = -tf.reduce_mean(fake)
 
     return loss

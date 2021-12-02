@@ -55,7 +55,7 @@ class Discriminator(k.models.Model):
             SN_ConvReflectionPad2D(filters=channels*2, kernel_size=3, strides=1),
             k.layers.LayerNormalization(epsilon=1e-5),
             k.layers.LeakyReLU(alpha=0.2),
-            SN_ConvReflectionPad2D(filters=1, kernel_size=3, strides=1, activation='sigmoid')
+            SN_ConvReflectionPad2D(filters=1, kernel_size=3, strides=1)
         ]
         
         self.model = k.Sequential(layers, name='Discriminator')
