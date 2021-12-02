@@ -34,9 +34,9 @@ class AnimeGAN:
               test_image=None, 
               test_generated_save_path=None):
         
-        if test_image:
-            assert test_generate_save_path is not None, 'Must provide test_generated_save_path'
-            os.makedirs(test_generate_save_path, exist_ok=True)
+        if test_image is not None:
+            assert test_generated_save_path is not None, 'Must provide test_generated_save_path'
+            os.makedirs(test_generated_save_path, exist_ok=True)
             
             if len(test_image.shape) == 3:
                 test_image = tf.expand_dims(test_image, axis=0)
@@ -48,7 +48,7 @@ class AnimeGAN:
                     save_path, 
                     save_discriminator, 
                     test_image, 
-                    test_generate_save_path)
+                    test_generated_save_path)
         
     
     def _init_train(self, dataset, epochs, save_freq, save_path):
@@ -64,7 +64,7 @@ class AnimeGAN:
             if e % saved_freq == 0 or e == epochs:
                 self.save_models(save_path, False, verbose=0)
     
-    def _train(self, dataset, epochs, save_freq, save_path, save_discriminator, test_image, test_generate_save_path):
+    def _train(self, dataset, epochs, save_freq, save_path, save_discriminator, test_image, test_generated_save_path):
         print('Adverserial Training')
         for e in range(1, epochs+1):
             print('Epoch', e)
@@ -78,7 +78,7 @@ class AnimeGAN:
                 self.save_models(save_path, save_discriminator, verbose=0)
             
             if test_image:
-                self._test_generator(test_image, f'image_e_{e:04d}.jpeg', test_generate_save_path)
+                self._test_generator(test_image, f'image_e_{e:04d}.jpeg', test_generated_save_path)
                 
     def _init_train_step(self, content):
         with tf.GradientTape() as tape:
