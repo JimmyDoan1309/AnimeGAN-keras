@@ -22,9 +22,11 @@ class AnimeGAN:
         self.dis_optimizer = tf.optimizers.Adam(self.params.dis_lr, beta_1=0.5)
         
     def train(self, dataset, total_epochs=100, init_epochs=10, save_freq=1, save_path='./model', save_discriminator=True):
-        pass
+        self._init_train(dataset, init_epochs, save_freq, save_path)
+        self._train(dataset, total_epochs - init_epochs, save_freq, save_path, save_discriminator)
+        
     
-    def _init_train(self, dataset, epochs):
+    def _init_train(self, dataset, epochs, save_freq, save_path):
         print('Init Training')
         for e in range(1, epochs+1):
             print('Epoch', e)
@@ -32,6 +34,10 @@ class AnimeGAN:
                 loss = self._init_train_step(content)
                 print(f'\rBatch {b}/{dataset.total_batches}: reconstruct_loss = {loss}', end='', flush=True)
             print()
+            
+            # saved model
+            if e % saved_freq == 0 or e == epochs:
+                self.save_models(save_path, False, verbose=0)
     
     def _train(self, dataset, epochs, save_freq, save_path, save_discriminator):
         print('Adverserial Training')
