@@ -78,7 +78,7 @@ class AnimeGAN:
             if e % save_freq == 0 or e == epochs:
                 self.save(save_path, save_discriminator, verbose=0)
             
-            if test_image:
+            if test_image is not None:
                 self._test_generator(test_image, f'image_e_{e:04d}.jpeg', test_generated_save_path)
                 
     def _init_train_step(self, content):
