@@ -19,6 +19,7 @@ class AnimeGAN:
         self.dis = Discriminator(input_shape)
         vgg = tf.keras.applications.VGG19(include_top=False, input_shape=input_shape)
         self.vgg = tf.keras.Model(inputs=vgg.inputs, outputs=vgg.layers[VGG_OUT].output)
+        self.vgg.trainable = False
         
         self.init_optimizer = tf.optimizers.Adam(self.params.init_lr, beta_1=0.5)
         self.gen_optimizer = tf.optimizers.Adam(self.params.gen_lr, beta_1=0.5)
@@ -61,8 +62,8 @@ class AnimeGAN:
             print()
             
             # saved model
-            if e % saved_freq == 0 or e == epochs:
-                self.save_models(save_path, False, verbose=0)
+            if e % save_freq == 0 or e == epochs:
+                self.save(save_path, False, verbose=0)
     
     def _train(self, dataset, epochs, save_freq, save_path, save_discriminator, test_image, test_generated_save_path):
         print('Adverserial Training')
@@ -75,7 +76,7 @@ class AnimeGAN:
             
             # saved model
             if e % saved_freq == 0 or e == epochs:
-                self.save_models(save_path, save_discriminator, verbose=0)
+                self.save(save_path, save_discriminator, verbose=0)
             
             if test_image:
                 self._test_generator(test_image, f'image_e_{e:04d}.jpeg', test_generated_save_path)
