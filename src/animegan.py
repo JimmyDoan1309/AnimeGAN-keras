@@ -32,27 +32,33 @@ class AnimeGAN:
               save_freq=1, 
               save_path='./model', 
               save_discriminator=True, 
-              test_image=None, 
-              test_generated_save_path=None):
+              sample_image=None, 
+              sample_folder=None):
         
-        if test_image is not None:
-            assert test_generated_save_path is not None, 'Must provide test_generated_save_path'
-            os.makedirs(test_generated_save_path, exist_ok=True)
+        if sample_image is not None:
+            assert sample_folder is not None, 'Must provide sample_folder'
+            os.makedirs(sample_folder, exist_ok=True)
             
-            if len(test_image.shape) == 3:
-                test_image = tf.expand_dims(test_image, axis=0)
+            if len(sample_image.shape) == 3:
+                sample_image = tf.expand_dims(sample_image, axis=0)
         
-        self._init_train(dataset, init_epochs, save_freq, save_path)
+        self._init_train(dataset, 
+                         init_epochs, 
+                         save_freq, 
+                         save_path, 
+                         sample_image, 
+                         sample_folder)
+        
         self._train(dataset, 
                     total_epochs - init_epochs, 
                     save_freq, 
                     save_path, 
                     save_discriminator, 
-                    test_image, 
-                    test_generated_save_path)
+                    sample_image,
+                    sample_folder)
         
     
-    def _init_train(self, dataset, epochs, save_freq, save_path):
+    def _init_train(self, dataset, epochs, save_freq, save_path, sample_image, sample_folder):
         print('Init Training')
         for e in range(1, epochs+1):
             print('Epoch', e)
@@ -64,8 +70,11 @@ class AnimeGAN:
             # saved model
             if e % save_freq == 0 or e == epochs:
                 self.save(save_path, False, verbose=0)
+                
+            if sample_image is not None:
+                self._save_sample_image(sample_image, f'init_e_{e:04d}.jpeg', sample_folder)
     
-    def _train(self, dataset, epochs, save_freq, save_path, save_discriminator, test_image, test_generated_save_path):
+    def _train(self, dataset, epochs, save_freq, save_path, save_discriminator, sample_image, sample_folder):
         print('Adverserial Training')
         for e in range(1, epochs+1):
             print('Epoch', e)
@@ -78,8 +87,8 @@ class AnimeGAN:
             if e % save_freq == 0 or e == epochs:
                 self.save(save_path, save_discriminator, verbose=0)
             
-            if test_image is not None:
-                self._test_generator(test_image, f'image_e_{e:04d}.jpeg', test_generated_save_path)
+            if sample_image is not None:
+                self._save_sample_image(sample_image, f'adv_e_{e:04d}.jpeg', sample_folder)
                 
     def _init_train_step(self, content):
         with tf.GradientTape() as tape:
@@ -130,9 +139,10 @@ class AnimeGAN:
             
         return gen_loss.numpy(), dis_loss.numpy()
     
-    def _test_generator(self, image, file_name, save_path):
+    def _save_sample_image(self, image, file_name, save_path):
         generate = self.gen(image)
         generate = denormalize(generate[0].numpy(), as_float=False)
+        generate = cv2.cvtColor(generate, cv2.COLOR_RGB2BGR)
         cv2.imwrite(os.path.join(save_path, file_name), generate)
         
     
