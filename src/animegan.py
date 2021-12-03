@@ -75,7 +75,7 @@ class AnimeGAN:
             print()
             
             # saved model
-            if e % saved_freq == 0 or e == epochs:
+            if e % save_freq == 0 or e == epochs:
                 self.save(save_path, save_discriminator, verbose=0)
             
             if test_image:
